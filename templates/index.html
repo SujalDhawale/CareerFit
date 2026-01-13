@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Analyzer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Tailwind (CDN for speed in this demo, though CSS file has custom styles too) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Outfit', 'sans-serif'] },
+                    colors: {
+                        glass: "rgba(255, 255, 255, 0.1)",
+                        glassBorder: "rgba(255, 255, 255, 0.2)",
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-900 min-h-screen text-white overflow-x-hidden">
+
+    <!-- Background Orbs -->
+    <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-purple-600 rounded-full blur-[128px] opacity-40"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-indigo-600 rounded-full blur-[128px] opacity-40"></div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        
+        <!-- Header -->
+        <header class="text-center mb-12 animate-fade-in-down">
+            <h1 class="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 mb-4">
+                ATS Resume Optimizer
+            </h1>
+            <p class="text-gray-300 text-lg">AI-powered analysis to drastically improve your hiring chances.</p>
+        </header>
+
+        <!-- Main Input Section -->
+        <div class="grid md:grid-cols-2 gap-8 mb-12">
+            
+            <!-- Upload Card -->
+            <div class="glass-card p-8 rounded-2xl border border-glassBorder shadow-2xl backdrop-blur-md">
+                <h2 class="text-2xl font-semibold mb-6 flex items-center">
+                    <span class="bg-blue-500/20 text-blue-300 p-2 rounded-lg mr-3">📄</span> Upload Resume
+                </h2>
+                
+                <div id="drop-zone" class="border-2 border-dashed border-gray-500 rounded-xl p-8 text-center transition-all hover:border-blue-400 hover:bg-white/5 cursor-pointer">
+                    <input type="file" id="resume" class="hidden" accept=".pdf,.doc,.docx">
+                    <div class="text-4xl mb-3">☁️</div>
+                    <p class="text-gray-300 mb-2">Drag & Drop or Click to Upload</p>
+                    <p class="text-xs text-gray-500">PDF, DOC, DOCX up to 10MB</p>
+                    <div id="file-name" class="mt-4 text-blue-300 font-medium hidden"></div>
+                </div>
+            </div>
+
+            <!-- JD Input Card -->
+            <div class="glass-card p-8 rounded-2xl border border-glassBorder shadow-2xl backdrop-blur-md">
+                <h2 class="text-2xl font-semibold mb-6 flex items-center">
+                    <span class="bg-purple-500/20 text-purple-300 p-2 rounded-lg mr-3">💼</span> Job Description
+                </h2>
+                <textarea id="jd-text" class="w-full h-48 bg-black/20 border border-gray-600 rounded-xl p-4 text-gray-200 focus:outline-none focus:border-purple-500 transition-all resize-none" placeholder="Paste the Job Description here..."></textarea>
+            </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="text-center mb-16">
+            <button id="analyze-btn" class="group relative px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full text-lg font-bold shadow-lg hover:shadow-blue-500/50 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                <span class="flex items-center justify-center gap-2">
+                    Start Analysis 🚀
+                </span>
+                <div class="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-20 transition-opacity"></div>
+            </button>
+            <div id="loading" class="hidden mt-4 text-blue-300 animate-pulse">Processing... This takes about 10-15 seconds.</div>
+        </div>
+
+        <!-- Results Section (Hidden initially) -->
+        <div id="results-section" class="hidden space-y-8 animate-fade-in-up">
+            
+            <!-- Score & Highlights -->
+            <div class="grid md:grid-cols-3 gap-6">
+                <!-- Score Circle -->
+                <div class="glass-card p-6 rounded-2xl border border-glassBorder flex flex-col items-center justify-center text-center">
+                    <h3 class="text-gray-400 mb-2">Match Score</h3>
+                    <div class="relative w-32 h-32 flex items-center justify-center">
+                        <svg class="w-full h-full transform -rotate-90">
+                            <circle cx="64" cy="64" r="56" stroke="currentColor" stroke-width="8" fill="transparent" class="text-gray-700" />
+                            <circle id="score-circle" cx="64" cy="64" r="56" stroke="currentColor" stroke-width="8" fill="transparent" class="text-green-500 transition-all duration-1000 ease-out" stroke-dasharray="351.86" stroke-dashoffset="351.86" />
+                        </svg>
+                        <span id="score-text" class="absolute text-3xl font-bold">0%</span>
+                    </div>
+                </div>
+
+                <!-- Missing Skills -->
+                <div class="md:col-span-2 glass-card p-6 rounded-2xl border border-glassBorder">
+                    <h3 class="text-xl font-semibold mb-4 text-red-300">⚠️ Missing Skills</h3>
+                    <div id="missing-skills" class="flex flex-wrap gap-2">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Details Grid -->
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Matched Skills -->
+                <div class="glass-card p-6 rounded-2xl border border-glassBorder">
+                    <h3 class="text-xl font-semibold mb-4 text-green-300">✅ Matched Skills</h3>
+                    <div id="matched-skills" class="flex flex-wrap gap-2">
+                         <!-- Populated via JS -->
+                    </div>
+                </div>
+
+                <!-- Course Recommendations -->
+                <div class="glass-card p-6 rounded-2xl border border-glassBorder">
+                    <h3 class="text-xl font-semibold mb-4 text-blue-300">📚 Recommended Courses</h3>
+                    <div id="courses-list" class="space-y-4 max-h-60 overflow-y-auto custom-scrollbar">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Download Report -->
+            <div class="text-center pt-8">
+                <a id="download-btn" href="#" target="_blank" class="inline-flex items-center gap-3 px-8 py-3 bg-gray-800 border border-gray-600 rounded-xl hover:bg-gray-700 hover:text-white transition-all">
+                    <span>📄 Download Full PDF Report</span>
+                </a>
+            </div>
+
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

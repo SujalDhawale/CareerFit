@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+
+# Flask
+instance/
+.webassets-cache
+
+# App specific
+uploads/
+reports/
+*.pdf
+*.log
+
+# VS Code
+.vscode/

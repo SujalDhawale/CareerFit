@@ -1,0 +1,11 @@
+flask
+python-dotenv
+google-generativeai
+pydantic
+pypdfium2
+reportlab
+beautifulsoup4
+requests
+gunicorn
+# docx2pdf is optional/windows-only, usually added manually or handled with try-except
+docx2pdf; sys_platform == 'win32'
